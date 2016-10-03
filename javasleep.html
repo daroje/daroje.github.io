@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <title>My Website</title>
+ <meta charset="UTF-8" />
+</head>
+
+<body>
+    <script>
+function sleep(milliseconds) {
+  var start = new Date().getTime();
+  for (var i = 0; i < 1e7; i = i+1) {
+    if ((new Date().getTime() - start) > milliseconds){
+      break;
+    }
+  }
+}
+
+sleep(100);
+    </script>
+
+ <h1>Your Page</h1>
+ <p>Your content.</p>
+</body>
+</html>
