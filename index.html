@@ -3,30 +3,30 @@
 <script>
 
 function make2DArray(cols, rows) {
-  let arr = new Array(cols);
-  for (let i = 0; i < arr.length; i++) {
-    arr[i] = new Array(rows);
-    for (let j = 0; j < arr[i].length; j++) {
-      arr[i][j] = 0;
-    }
-  }
-  return arr;
+  let arr = new Array(cols);
+  for (let i = 0; i < arr.length; i++) {
+    arr[i] = new Array(rows);
+    for (let j = 0; j < arr[i].length; j++) {
+      arr[i][j] = 0;
+    }
+  }
+  return arr;
 }
 
 function isSand(state) {
-  return state > 0 && state != 1;
+  return state > 0 && state != 1;
 }
 
 function isVisibleHeart(state) {
-  return state === heartHue;
+  return state === heartHue;
 }
 
 function isSolid(state) {
-  return isSand(state) || isVisibleHeart(state);
+  return isSand(state) || isVisibleHeart(state);
 }
 
 function isHiddenHeart(state) {
-  return state === -1;
+  return state === -1;
 }
 
 let grid;
@@ -36,159 +36,170 @@ let heartHue = 1;
 let canvas;
 let mouseIsPressed = false;
 let dirty = false;
+let dirtyPixels = [];
 
 const mousePosText = document.getElementById('mouse-pos');
 let mousePos = { x: undefined, y: undefined };
 
 window.addEventListener('mousemove', (event) => {
   var rect = canvas.getBoundingClientRect();
-  mousePos = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  mousePos = { x: event.clientX - rect.left, y: event.clientY - rect.top };
 });
 
 // Check if a row is within the bounds
 function withinCols(i) {
-  return i >= 0 && i <= cols - 1;
+  return i >= 0 && i <= cols - 1;
 }
 
 // Check if a column is within the bounds
 function withinRows(j) {
-  return j >= 0 && j <= rows - 1;
+  return j >= 0 && j <= rows - 1;
 }
 
 function SetHue(i, j, h) {
-  dirty = true;
   grid[i][j] = h;
+  dirtyPixels.push([i, j]);
 }
 
 function setup() {
-  const canvasW = 800;
-  const canvasH = 800;
-  canvas = document.createElement('canvas');
-  canvas.width = canvasW;
-  canvas.height = canvasH;
-  canvas.style.position = 'absolute';
-  canvas.style.border = '1px solid';
-  document.body.appendChild(canvas);
-  cols = canvasW / w;
-  rows = canvasH / w;
-  grid = make2DArray(cols, rows);
+  const canvasW = 800;
+  const canvasH = 800;
+  canvas = document.createElement('canvas');
+  canvas.width = canvasW;
+  canvas.height = canvasH;
+  canvas.style.position = 'absolute';
+  canvas.style.border = '1px solid';
+  document.body.appendChild(canvas);
+  cols = canvasW / w;
+  rows = canvasH / w;
+  grid = make2DArray(cols, rows);
 
-  for (let t = 0; t < 2 * Math.PI; t += 0.015) {
-    let sint = Math.sin(t);
-    let x0 = 16 * sint * sint * sint;
-    let y0 =
-      -13 * Math.cos(t) +
-      5 * Math.cos(2 * t) +
-      2 * Math.cos(3 * t) +
-      Math.cos(4 * t);
-    let x = 0.5 * cols + Math.round(cols * x0 * 0.025);
-    let y = 0.5 * rows + Math.round(rows * y0 * 0.025);
-    grid[x][y] = -1;
-  }
+  for (let t = 0; t < 2 * Math.PI; t += 0.015) {
+    let sint = Math.sin(t);
+    let x0 = 16 * sint * sint * sint;
+    let y0 =
+      -13 * Math.cos(t) +
+      5 * Math.cos(2 * t) +
+      2 * Math.cos(3 * t) +
+      Math.cos(4 * t);
+    let x = 0.5 * cols + Math.round(cols * x0 * 0.025);
+    let y = 0.5 * rows + Math.round(rows * y0 * 0.025);
+    grid[x][y] = -1;
+  }
 
-  document.addEventListener('mousedown', (event) => {
-    if (event.button == 0) {
-      mouseIsPressed = true;
-      event.preventDefault(); // Prevent selection
-      if (!dirty)
+  document.addEventListener('mousedown', (event) => {
+    if (event.button == 0) {
+      mouseIsPressed = true;
+      event.preventDefault(); // Prevent selection
+      if (dirtyPixels.length === 0)
         requestAnimationFrame(draw);
-    }
-  });
+    }
+  });
 
-  document.addEventListener('mouseup', (event) => {
-    if (event.button == 0) {
-      mouseIsPressed = false;
-      event.preventDefault(); // Prevent selection
-    }
-  });
+  document.addEventListener('mouseup', (event) => {
+    if (event.button == 0) {
+      mouseIsPressed = false;
+      event.preventDefault(); // Prevent selection
+    }
+  });
 }
 
 function draw() {
-  dirty = false;
+  // console.log("dirtyPixels.length " + dirtyPixels.length)
 
-  const context = canvas.getContext('2d');
+
+  const context = canvas.getContext('2d');
   context.rect(0, 0, canvas.width, canvas.height);
   context.fillStyle = "black";
   context.fill();
 
-  if (mouseIsPressed) {
-    let mouseCol = Math.floor(mousePos.x / w);
-    let mouseRow = Math.floor(mousePos.y / w);
+  if (mouseIsPressed) {
+    let mouseCol = Math.floor(mousePos.x / w);
+    let mouseRow = Math.floor(mousePos.y / w);
 
-    if (withinCols(mouseCol) && withinRows(mouseRow)) {
-      let state = grid[mouseCol][mouseRow];
-      if (!isSolid(state) && !isHiddenHeart(state))
+    if (withinCols(mouseCol) && withinRows(mouseRow)) {
+      let state = grid[mouseCol][mouseRow];
+      if (!isSolid(state) && !isHiddenHeart(state))
 	SetHue(mouseCol, mouseRow, 30 + 40*Math.random());
-    }
-  }
+    }
+  }
 
-  // Draw the grid
-  for (let i = 0; i < cols; i++) {
-    for (let j = 0; j < rows; j++) {
-      if (grid[i][j] > 0) {
-        let x = i * w;
-        let y = j * w;
-        context.fillStyle = "hsl(" + grid[i][j] + ",100% , 50%)";
-        context.fillRect(x, y, w, w);
-      }
-    }
-  }
+  // Draw the grid
+  for (let i = 0; i < cols; i++) {
+    for (let j = 0; j < rows; j++) {
+      if (grid[i][j] > 0) {
+        let x = i * w;
+        let y = j * w;
+        context.fillStyle = "hsl(" + grid[i][j] + ",100% , 50%)";
+        context.fillRect(x, y, w, w);
+      }
+    }
+  }
 
-  for (let i = 0; i < cols; i++) {
-    for (let j = rows - 1; j >= 0; j--) {
-      let state = grid[i][j];
+  dirtyPixTemp = [...dirtyPixels];
+  dirtyPixels.length = 0;
 
-      if (isHiddenHeart(state)) {
-        for (const el of [i + 1, i - 1]) {
-          if (withinCols(el) && isSand(grid[el][j]))
-            SetHue(i, j, heartHue);
-        }
-        for (const el of [j + 1, j - 1]) {
-          if (isSand(grid[i][el])) {
-	    SetHue(i, j, heartHue);
-          }
-        }
-      }
+  for (const [i,j] of dirtyPixTemp) { 
+    innerLoop(i,j);
+  }
 
-      if (isSand(state)) {
-        let below = grid[i][j + 1];
-
-        // Randomly fall left or right
-        let dir = 1;
-        if (Math.random() < 0.5) {
-          dir *= -1;
-        }
-
-        let belowA = -1;
-        let belowB = -1;
-        if (withinCols(i + dir)) {
-          belowA = grid[i + dir][j + 1];
-        }
-        if (withinCols(i - dir)) {
-          belowB = grid[i - dir][j + 1];
-        }
-
-        if (below === 0) {
-          grid[i][j + 1] = state;
-          grid[i][j] = 0;
-          dirty = true;
-        } else if (belowA === 0 && !isSolid(grid[i + dir][j])) {
-          grid[i + dir][j + 1] = state;
-          grid[i][j] = 0;
-          dirty = true;
-        } else if (belowB === 0 && !isSolid(grid[i - dir][j])) {
-          grid[i - dir][j + 1] = state;
-          grid[i][j] = 0;
-          dirty = true;
-        } else {
-          grid[i][j] = state;
-        }
-      }
-    }
-  }
-
-  if (dirty)
+  if (dirtyPixels.length > 0) {
     requestAnimationFrame(draw);
+  }
+}
+
+function innerLoop(i, j) {
+  let state = grid[i][j];
+
+  for (const el of [i + 1, i - 1]) {
+    if (withinCols(el) && isHiddenHeart(grid[el][j]))
+      grid[el][j] = heartHue;
+    }
+  for (const el of [j + 1, j - 1]) {
+    if (isHiddenHeart(grid[i][el])) {
+      grid[i][el] = heartHue;
+    }
+  }
+
+  if (isSand(state)) {
+    let below = grid[i][j + 1];
+
+    // Randomly fall left or right
+    let dir = 1;
+    if (Math.random() < 0.5) {
+      dir *= -1;
+    }
+
+    let belowA = -1;
+    let belowB = -1;
+    if (withinCols(i + dir)) {
+      belowA = grid[i + dir][j + 1];
+    }
+    if (withinCols(i - dir)) {
+      belowB = grid[i - dir][j + 1];
+    }
+
+    if (below === 0) {
+      SetHue(i, j+1, state);
+      SetHue(i, j, below);
+    } else if (belowA === 0 && !isSolid(grid[i + dir][j])) {
+      SetHue(i+dir, j+1, state);
+      SetHue(i, j, belowA);
+    } else if (belowB === 0 && !isSolid(grid[i - dir][j])) {
+      SetHue(i-dir, j+1, state);
+      SetHue(i, j, belowB);
+    } else {
+      return;
+    }
+        
+    if (!withinRows(j-1)) {
+          return;
+    }
+    for (const el of [i + 1, i - 1]) {
+      if (withinCols(el) && isSand(grid[el][j-1]))
+        dirtyPixels.push([el, j-1]);
+    }
+  }
 }
 
 setup();
