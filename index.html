@@ -16,6 +16,7 @@ let sandWidth = 40;
 let waterMin = 200;
 let waterWidth = 40;
 let activeElement = 0;
+let canvasContext;
 
 function make2DArray(cols, rows) {
   let arr = new Array(cols);
@@ -52,6 +53,18 @@ function isHiddenHeart(state) {
   return state === -1;
 }
 
+function drawPixel(i, j) {
+  let x = i * w;
+  let y = j * w;
+  state = grid[i][j];
+  if (state > 0) {
+    canvasContext.fillStyle = "hsl(" + grid[i][j] + ",100% , 50%)";
+  } else {
+    canvasContext.fillStyle = "black";
+  }
+  canvasContext.fillRect(x, y, w, w);
+}
+
 const mousePosText = document.getElementById('mouse-pos');
 let mousePos = { x: undefined, y: undefined };
 
@@ -74,6 +87,7 @@ function SetHue(i, j, h) {
   grid[i][j] = h;
   if (h != 0)
     dirtyPixels.push([i, j]);
+  drawPixel(i,j);
 }
 
 function setup() {
@@ -84,6 +98,12 @@ function setup() {
   canvas.height = canvasH;
   canvas.style.position = 'absolute';
   canvas.style.border = '1px solid';
+  const context = canvas.getContext('2d');
+  canvasContext = context;
+  context.rect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "black";
+  context.fill();
+
   document.body.appendChild(canvas);
   cols = canvasW / w;
   rows = canvasH / w;
@@ -123,12 +143,6 @@ function setup() {
 function draw() {
   // console.log("dirtyPixels.length " + dirtyPixels.length)
 
-
-  const context = canvas.getContext('2d');
-  context.rect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = "black";
-  context.fill();
-
   if (mouseIsPressed) {
     let mouseCol = Math.floor(mousePos.x / w);
     let mouseRow = Math.floor(mousePos.y / w);
@@ -140,18 +154,6 @@ function draw() {
   	  SetHue(mouseCol, mouseRow, sandMin + sandWidth*Math.random());
         else
   	  SetHue(mouseCol, mouseRow, waterMin + waterWidth*Math.random());
-    }
-  }
-
-  // Draw the grid
-  for (let i = 0; i < cols; i++) {
-    for (let j = 0; j < rows; j++) {
-      if (grid[i][j] > 0) {
-        let x = i * w;
-        let y = j * w;
-        context.fillStyle = "hsl(" + grid[i][j] + ",100% , 50%)";
-        context.fillRect(x, y, w, w);
-      }
     }
   }
 
@@ -178,12 +180,15 @@ function innerLoop(i, j) {
 
 
   for (const el of [i + 1, i - 1]) {
-    if (withinCols(el) && isHiddenHeart(grid[el][j]))
+    if (withinCols(el) && isHiddenHeart(grid[el][j])) {
       grid[el][j] = heartHue;
+      drawPixel(el,j);
     }
+  }
   for (const el of [j + 1, j - 1]) {
     if (isHiddenHeart(grid[i][el])) {
       grid[i][el] = heartHue;
+      drawPixel(i,el);
     }
   }
 
