@@ -1,6 +1,21 @@
+
 <body>
 
 <script>
+
+let grid;
+let w = 5;
+let cols, rows;
+let heartHue = 1;
+let canvas;
+let mouseIsPressed = false;
+let dirty = false;
+let dirtyPixels = [];
+let sandMin = 30;
+let sandWidth = 40;
+let waterMin = 200;
+let waterWidth = 40;
+let activeElement = 0;
 
 function make2DArray(cols, rows) {
   let arr = new Array(cols);
@@ -14,8 +29,16 @@ function make2DArray(cols, rows) {
 }
 
 function isSand(state) {
-  return state > 0 && state != 1;
+  return state >= sandMin && state <= sandWidth + sandMin;
 }
+
+function isWater(state) {
+  return state >= waterMin && state <= waterWidth + waterMin;
+}
+
+function isDynamic(state) {
+  return isSand(state) || isWater(state);
+} 
 
 function isVisibleHeart(state) {
   return state === heartHue;
@@ -28,15 +51,6 @@ function isSolid(state) {
 function isHiddenHeart(state) {
   return state === -1;
 }
-
-let grid;
-let w = 5;
-let cols, rows;
-let heartHue = 1;
-let canvas;
-let mouseIsPressed = false;
-let dirty = false;
-let dirtyPixels = [];
 
 const mousePosText = document.getElementById('mouse-pos');
 let mousePos = { x: undefined, y: undefined };
@@ -58,7 +72,8 @@ function withinRows(j) {
 
 function SetHue(i, j, h) {
   grid[i][j] = h;
-  dirtyPixels.push([i, j]);
+  if (h != 0)
+    dirtyPixels.push([i, j]);
 }
 
 function setup() {
@@ -99,6 +114,7 @@ function setup() {
   document.addEventListener('mouseup', (event) => {
     if (event.button == 0) {
       mouseIsPressed = false;
+      activeElement = 1 - activeElement
       event.preventDefault(); // Prevent selection
     }
   });
@@ -119,8 +135,11 @@ function draw() {
 
     if (withinCols(mouseCol) && withinRows(mouseRow)) {
       let state = grid[mouseCol][mouseRow];
-      if (!isSolid(state) && !isHiddenHeart(state))
-	SetHue(mouseCol, mouseRow, 30 + 40*Math.random());
+      if (!isSolid(state) && !isWater(state) && !isHiddenHeart(state))
+        if (activeElement === 0)
+  	  SetHue(mouseCol, mouseRow, sandMin + sandWidth*Math.random());
+        else
+  	  SetHue(mouseCol, mouseRow, waterMin + waterWidth*Math.random());
     }
   }
 
@@ -149,7 +168,14 @@ function draw() {
 }
 
 function innerLoop(i, j) {
+  // const context = canvas.getContext('2d');
+  // context.fillStyle = "hsl(100,100% , 50%)";
+  // context.fillRect(i*w, j*w, w, w);
+
   let state = grid[i][j];
+  if (state === 0)
+    return;
+
 
   for (const el of [i + 1, i - 1]) {
     if (withinCols(el) && isHiddenHeart(grid[el][j]))
@@ -182,23 +208,81 @@ function innerLoop(i, j) {
     if (below === 0) {
       SetHue(i, j+1, state);
       SetHue(i, j, below);
+    } else if (isWater(below)) {
+      SetHue(i, j+1, state);
+      if (belowA === 0) {
+        SetHue(i + dir, j+1, below);
+        SetHue(i, j, 0);
+      } else if (belowB === 0) {
+        SetHue(i - dir, j+1, below);
+        SetHue(i, j, 0);
+      } else {
+        SetHue(i, j, below);
+      }
+    } else if ((belowA === 0 || isWater(belowA)) && !isSolid(grid[i + dir][j])) {
+      SetHue(i+dir, j+1, state);
+      SetHue(i, j, belowA);
+    } else if ((belowB === 0|| isWater(belowB)) && !isSolid(grid[i - dir][j])) {
+      SetHue(i-dir, j+1, state);
+      SetHue(i, j, belowB);
+    } else {
+      return;
+    }
+  }
+
+  if (isWater(state)) {
+    let below = grid[i][j + 1];
+
+    // Randomly fall left or right
+    let dir = 1;
+    if (Math.random() < 0.5) {
+      dir *= -1;
+    }
+
+    let belowA = -1;
+    let belowB = -1;
+    let sideA = -1;
+    let sideB = -1;
+    if (withinCols(i + dir)) {
+      belowA = grid[i + dir][j + 1];
+      sideA = grid[i + dir][j];
+    }
+    if (withinCols(i - dir)) {
+      belowB = grid[i - dir][j + 1];
+      sideB = grid[i - dir][j];
+    }
+
+    if (below === 0) {
+      SetHue(i, j+1, state);
+      SetHue(i, j, below);
     } else if (belowA === 0 && !isSolid(grid[i + dir][j])) {
       SetHue(i+dir, j+1, state);
       SetHue(i, j, belowA);
     } else if (belowB === 0 && !isSolid(grid[i - dir][j])) {
       SetHue(i-dir, j+1, state);
       SetHue(i, j, belowB);
+    } else if (sideA === 0 && !isSolid(grid[i + dir][j])) {
+      SetHue(i + dir, j, state);
+      SetHue(i, j, sideA);
+    } else if (sideB === 0 && !isSolid(grid[i - dir][j])) {
+      SetHue(i - dir, j, state);
+      SetHue(i, j, sideB);
     } else {
       return;
     }
-        
-    if (!withinRows(j-1)) {
-          return;
-    }
-    for (const el of [i + 1, i - 1]) {
-      if (withinCols(el) && isSand(grid[el][j-1]))
-        dirtyPixels.push([el, j-1]);
-    }
+  }
+
+  for (const el of [i + 1, i - 1]) {
+    if (withinCols(el) && isWater(grid[el][j]))
+      dirtyPixels.push([el, j]);
+  }
+
+  if (!withinRows(j-1)) {
+        return;
+  }
+  for (const el of [i + 1, i,  i - 1]) {
+    if (withinCols(el) && isDynamic(grid[el][j-1]))
+      dirtyPixels.push([el, j-1]);
   }
 }
 
