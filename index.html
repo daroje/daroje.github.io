@@ -22,6 +22,11 @@ let hiddenPixels = [];
 function rotate() {
     let newGrid = make2DArray(cols, rows);
     dirtyPixels.length = 0;
+    for (let n = 0; n < hiddenPixels.length; ++n) {
+      const [i,j] = hiddenPixels[n];
+      hiddenPixels[n] = [i, rows-j-1];
+    }
+
     for (let i = 0; i < cols; ++i) {
         for (let j = 0; j < rows; j++) {
             newGrid[i][j] = grid[i][rows-j-1];
