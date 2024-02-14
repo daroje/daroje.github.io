@@ -28,7 +28,7 @@
             for (let i = 0; i < cols; ++i) {
                 for (let j = 0; j < rows; j++) {
                     newGrid[i][j] = grid[i][rows - j - 1];
-                    if (newGrid[i][j] > 0)
+                    if (newGrid[i][j] > 1)
                         dirtyPixels.push([i, j]);
                 }
             }
