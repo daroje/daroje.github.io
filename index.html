@@ -201,7 +201,7 @@
                 if (shouldReveal(i, j)) {
                     grid[i][j] = heartHue;
                     drawPixel(i, j);
-                    insertUnique(removedHiddenPixels, i, j);
+                    removedHiddenPixels.push([i, j]);
                 }
             }
             hiddenPixels = hiddenPixels.filter(([i, j]) => !removedHiddenPixels.some(([a, b]) => a === i && b === j));
