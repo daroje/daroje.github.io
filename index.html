@@ -63,7 +63,7 @@
         }
 
         function isDynamic(state) {
-            return isSand(state) || isWater(state);
+            return state > 1;
         }
 
         function isVisibleHeart(state) {
@@ -122,7 +122,7 @@
 
         function SetHue(i, j, h) {
             grid[i][j] = h;
-            if (h != 0)
+            if (h > 1)
                 insertUnique(dirtyPixels, i, j)
             drawPixel(i, j);
         }
@@ -221,7 +221,7 @@
 
         function innerLoop(i, j) {
             let state = grid[i][j];
-            if (state === 0)
+            if (state <= 1)
                 return;
 
             if (isSand(state)) {
