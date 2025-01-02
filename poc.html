@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <button id="triggerButton">Trigger the bug</button>
+<script>
+    triggerButton = document.querySelector('#triggerButton');
+    triggerButton.addEventListener('click', async event => {
+        let w = window.open("./popup.html");
+        setTimeout(()=>{w.close()},10000);
+    });
+</script>
+</body>
+</html>
